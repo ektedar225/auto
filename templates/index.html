@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 900px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+
+        label {
+            font-size: 1.2em;
+            color: #555;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .results-container {
+            margin-top: 30px;
+            background-color: #fafafa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .results-container h3 {
+            color: #007BFF;
+        }
+
+        .result-card {
+            background-color: #ffffff;
+            margin-bottom: 15px;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card h4 {
+            color: #333;
+        }
+
+        .result-card p {
+            color: #555;
+        }
+
+        .error {
+            color: red;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .download-link {
+            margin-top: 20px;
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            text-align: center;
+            width: fit-content;
+        }
+
+        .download-link:hover {
+            background-color: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Company Search</h1>
+        <form method="POST" action="/search" id="search-form">
+            <label for="query">Enter your query (e.g., SaaS startups 2025):</label><br>
+            <input type="text" id="query" name="query" required placeholder="e.g., Top SaaS companies 2025"><br><br>
+            <button type="submit">Search</button>
+        </form>
+        
+        <h2>Results</h2>
+        <div id="results" class="results-container"></div>
+
+        <h3>Download Results</h3>
+        <a href="/download" class="download-link" download>Download JSON</a>
+    </div>
+
+    <script>
+        const form = document.querySelector('#search-form');
+        const resultsDiv = document.getElementById('results');
+        const loadingMessage = '<div class="loading">Loading...</div>';
+        
+        form.onsubmit = async (event) => {
+            event.preventDefault();
+            
+            // Clear previous results and show loading message
+            resultsDiv.innerHTML = loadingMessage;
+            resultsDiv.classList.remove('error');
+
+            const formData = new FormData(form);
+            const response = await fetch('/search', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                resultsDiv.innerHTML = ''; // Clear loading message
+
+                if (data.length === 0) {
+                    resultsDiv.innerHTML = '<p>No results found. Please try a different query.</p>';
+                } else {
+                    data.forEach(item => {
+                        const resultCard = document.createElement('div');
+                        resultCard.classList.add('result-card');
+
+                        const companyTitle = document.createElement('h4');
+                        companyTitle.textContent = item.Company;
+                        resultCard.appendChild(companyTitle);
+
+                        item.Details.forEach(detail => {
+                            const detailParagraph = document.createElement('p');
+                            detailParagraph.innerHTML = ` 
+                                <strong>Title:</strong> ${detail.Title}<br>
+                                <strong>Link:</strong> <a href="${detail.Link}" target="_blank">${detail.Link}</a><br>
+                                <strong>Snippet:</strong> ${detail.Snippet}<br>
+                                <strong>Email ID:</strong> <a href="mailto:${detail.Email}">${detail.Email}</a>
+                            `;
+                            resultCard.appendChild(detailParagraph);
+                        });
+
+                        resultsDiv.appendChild(resultCard);
+                    });
+                }
+            } else {
+                resultsDiv.classList.add('error');
+                resultsDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+            }
+        };
+    </script>
+</body>
+</html>
